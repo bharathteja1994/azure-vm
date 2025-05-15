@@ -127,3 +127,39 @@ resource "azurerm_windows_virtual_machine" "windows_virtual_machine" {
   bypass_platform_safety_checks_on_user_schedule_enabled = true
   patch_mode                                             = "AutomaticByPlatform"
 }
+
+resource "azurerm_network_interface" "network_interface" {
+  name                = var.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  dns_servers         = var.dns_servers
+  edge_zone           = var.edge_zone
+  accelerated_networking_enabled = var.accelerated_networking_enabled
+  ip_forwarding_enabled          = var.ip_forwarding_enabled
+  internal_dns_name_label        = var.internal_dns_name_label
+  tags = var.tags
+
+  dynamic "ip_configuration" {
+    for_each = try(var.ip_configuration, null) != null ? var.ip_configuration : []
+    content {
+      name                                               = try(ip_configuration.value.name, null)
+      gateway_load_balancer_frontend_ip_configuration_id = try(ip_configuration.value.gateway_load_balancer_frontend_ip_configuration_id, null)
+      subnet_id                                          = try(ip_configuration.value.subnet_id, null)
+      private_ip_address_version                         = "IPv4"
+      private_ip_address_allocation                      = try(ip_configuration.value.private_ip_address_allocation, null)
+      public_ip_address_id                               = null
+      primary                                            = try(ip_configuration.value.primary, null)
+      private_ip_address                                 = try(ip_configuration.value.private_ip_address, null)
+    }
+  }
+  dynamic "timeouts" {
+    for_each = var.timeouts != [] ? var.timeouts : []
+    content {
+      create = lookup(timeouts.value, "create", "30m")
+      update = lookup(timeouts.value, "update", "30m")
+      delete = lookup(timeouts.value, "delete", "30m")
+      read   = lookup(timeouts.value, "read", "5m")
+    }
+  }
+}
+
