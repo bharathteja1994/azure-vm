@@ -338,3 +338,63 @@ variable "upper" {
   description = "(Boolean) Include uppercase alphabet characters in the result. Default value is true."
   default     = true
 }
+
+NIC##############
+
+variable "ip_configuration" {
+  description = <<EOT
+(Required) One or more block(s) as defined in the module.tf
+name - (Required) A name used for this IP Configuration.
+gateway_load_balancer_frontend_ip_configuration_id - (Optional) The Frontend IP Configuration ID of a Gateway SKU Load Balancer.
+subnet_id - (Optional) The ID of the Subnet where this Network Interface should be located in.
+private_ip_address_allocation - (Required) The allocation method used for the Private IP Address. Possible values are Dynamic and Static.
+Note: Dynamic means "An IP is automatically assigned during creation of this Network Interface"; Static means "User supplied IP address will be used"
+primary - (Optional) Is this the Primary IP Configuration? Must be true for the first ip_configuration when multiple are specified. Defaults to false.
+When private_ip_address_allocation is set to Static the private_ip_address field can be configured:
+private_ip_address - (Optional) The Static IP Address which should be used.
+EOT
+  type        = list(any)
+}
+variable "location" {
+  description = "(Required) The location where the Network Interface should exist."
+  type        = string
+}
+variable "name" {
+  description = "(Required) The name of the Network Interface."
+  type        = string
+}
+variable "resource_group_name" {
+  description = "(Required) The name of the Resource Group in which to create the Network Interface."
+  type        = string
+}
+variable "dns_servers" {
+  description = "(Optional) A list of IP Addresses defining the DNS Servers which should be used for this Network Interface."
+  type        = list(string)
+  default     = null
+}
+variable "edge_zone" {
+  description = "(Optional) Specifies the Edge Zone within the Azure Region where this Network Interface should exist."
+  type        = string
+  default     = null
+}
+variable "ip_forwarding_enabled" {
+  description = "(Optional) Should IP Forwarding be enabled? Defaults to false."
+  type        = bool
+  default     = false
+}
+variable "accelerated_networking_enabled" {
+  description = "(Optional) Should Accelerated Networking be enabled? Defaults to false."
+  type        = bool
+  default     = false
+}
+variable "internal_dns_name_label" {
+  description = "(Optional) The (relative) DNS Name used for internal communications between Virtual Machines in the same Virtual Network."
+  type        = string
+  default     = null
+}
+
+variable "timeouts" {
+  type        = any
+  default     = []
+  description = "(Optional) Default value to create: 30 minutes, update:30 minutes, read: 5 mins, delete:30 minutes for the NetApp Volume."
+}
