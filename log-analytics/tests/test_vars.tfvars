@@ -1,0 +1,20 @@
+workspace_name       = "example-log-analytics"
+location             = "East US"
+resource_group_name  = "example-resource-group"
+sku                  = "PerGB2018"
+retention_in_days    = 60
+daily_quota_gb       = 5
+allow_resource_only_permissions = true
+local_authentication_disabled   = false
+internet_ingestion_enabled      = true
+internet_query_enabled          = true
+reservation_capacity_in_gb_per_day = null
+cmk_for_query_forced          = false
+data_collection_rule_id       = null
+immediate_data_purge_on_30_days_enabled = false
+tags                          = {
+  Environment = "Test"
+  Project     = "Analytics"
+}
+identity_type                 = "SystemAssigned"
+identity_ids                  = []
