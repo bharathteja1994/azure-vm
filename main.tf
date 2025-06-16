@@ -324,26 +324,70 @@ resource "azurerm_virtual_machine_data_disk_attachment" "data_disk" {
 #--------------------------------------------------------------
 # Azure Log Analytics Workspace Agent Installation for windows
 #--------------------------------------------------------------
-resource "azurerm_virtual_machine_extension" "omsagentwin" {
-  count                      = var.deploy_log_analytics_agent && var.log_analytics_workspace_id != null && var.os_flavor == "windows" ? var.instances_count : 0
-  name                       = var.instances_count == 1 ? "OmsAgentForWindows" : format("%s%s", "OmsAgentForWindows", count.index + 1)
+resource "azurerm_monitor_data_collection_rule" "example" {
+  name                = "example-dcr"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  data_sources {
+    performance_counter {
+      streams                       = ["Microsoft-Perf"]
+      sampling_frequency_in_seconds = 60
+      counter_specifiers            = [
+        "\Processor(_Total)\% Processor Time",
+        "\Memory\Available Bytes",
+        "\LogicalDisk(_Total)\% Free Space",
+        "\LogicalDisk(_Total)\% Disk Time",
+        "\Network Interface(*)\Bytes Total/sec"
+      ]
+      name                          = "perfCounter1"
+    }
+
+    windows_event_log {
+      streams           = ["Microsoft-WindowsEvent"]
+      x_path_queries    = [
+        "Application!*[System[(Level=1 or Level=2 or Level=3)]]",
+        "System!*[System[(Level=1 or Level=2 or Level=3)]]",
+        "Security!*[System[(Level=1 or Level=2 or Level=3)]]"
+      ]
+      name              = "eventLog1"
+    }
+
+    syslog {
+      streams        = ["Microsoft-Syslog"]
+      facility_names = ["auth", "authpriv", "cron", "daemon", "kern", "syslog", "user"]
+      log_levels     = ["alert", "crit", "err", "warning", "notice", "info", "debug"]
+      name           = "syslog1"
+    }
+  }
+
+  destinations {
+    log_analytics {
+      workspace_resource_id = var.log_analytics_workspace_id
+      name                  = "logAnalyticsDest"
+    }
+  }
+
+  data_flow {
+    streams      = ["Microsoft-Perf", "Microsoft-WindowsEvent", "Microsoft-Syslog"]
+    destinations = ["logAnalyticsDest"]
+  }
+}
+
+resource "azurerm_monitor_data_collection_rule_association" "example" {
+  name                    = "example-dcra"
+  target_resource_id      = azurerm_windows_virtual_machine.win_vm[0].id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.example.id
+}
+
+resource "azurerm_virtual_machine_extension" "ama_agent" {
+  count                      = var.os_flavor == "windows" ? var.instances_count : 0
+  name                       = "AzureMonitorWindowsAgent"
   virtual_machine_id         = azurerm_windows_virtual_machine.win_vm[count.index].id
-  publisher                  = "Microsoft.EnterpriseCloud.Monitoring"
-  type                       = "MicrosoftMonitoringAgent"
-  type_handler_version       = "1.0"
+  publisher                  = "Microsoft.Azure.Monitor"
+  type                       = "AzureMonitorWindowsAgent"
+  type_handler_version       = "1.10"
   auto_upgrade_minor_version = true
-
-  settings = <<SETTINGS
-    {
-      "workspaceId": "${var.log_analytics_customer_id}"
-    }
-  SETTINGS
-
-  protected_settings = <<PROTECTED_SETTINGS
-    {
-    "workspaceKey": "${var.log_analytics_workspace_primary_shared_key}"
-    }
-  PROTECTED_SETTINGS
 }
 
 #--------------------------------------------------------------
